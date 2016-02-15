@@ -1,0 +1,142 @@
+# -*- coding: utf-8 -*-
+
+from geoshape.settings import AUTH_EXEMPT_URLS
+from geoshape.settings import INSTALLED_APPS
+from celery.schedules import crontab
+from datetime import timedelta
+
+SITENAME = 'GeoSHAPE'
+SITEURL = '<%= @site_url %>'
+DEBUG = <%= @debug.to_s.capitalize %>
+LOCKDOWN_GEONODE = <%= @lockdown_geonode.to_s.capitalize %>
+
+ALLOWED_HOSTS = <%= @allowed_hosts %>
+
+PROXY_ALLOWED_HOSTS = (
+'*',
+)
+
+ADMINS = (
+)
+
+CLASSIFICATION_BANNER_ENABLED = False
+CLASSIFICATION_TEXT = ''
+CLASSIFICATION_TEXT_COLOR = ''
+CLASSIFICATION_BACKGROUND_COLOR = ''
+CLASSIFICATION_LINK = ''
+
+EMAIL_HOST = '<%= @email_host %>'
+EMAIL_PORT = '<%= @email_port %>'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+DEFAULT_FROM_EMAIL = '<%= @server_email %>'
+REGISTRATION_OPEN = <%= @enable_registration.to_s.capitalize %>
+ACCOUNT_ACTIVATION_DAYS = <%= @account_activation %>
+ACCOUNT_APPROVAL_REQUIRED = <%= @account_approval.to_s.capitalize %>
+ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = <%= @account_email_confirm.to_s.capitalize %>
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': '<%= @db_name %>',
+        'USER': '<%= @db_username %>',
+        'PASSWORD': '<%= @db_password %>',
+        'HOST': '<%= @db_endpoint %>',
+        'PORT': '<%= @db_port %>',
+    },
+    '<%= @imports_db_alias %>': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': '<%= @imports_db_name %>',
+        'USER': '<%= @imports_db_user %>',
+        'PASSWORD': '<%= @imports_db_password %>',
+        'HOST': '<%= @imports_db_endpoint %>',
+        'PORT': '<%= @imports_db_port %>',
+    }
+}
+
+GEOSERVER_URL = SITEURL + 'geoserver/'
+
+# OGC (WMS/WFS/WCS) Server Settings
+OGC_SERVER = {
+    'default' : {
+        'BACKEND' : 'geonode.geoserver',
+        'LOCATION' : GEOSERVER_URL,
+        'PUBLIC_LOCATION' : GEOSERVER_URL,
+        'USER' : '<%= @geoserver_username %>',
+        'PASSWORD' : '<%= @geoserver_password %>',
+        'MAPFISH_PRINT_ENABLED' : True,
+        'PRINT_NG_ENABLED' : True,
+        'GEONODE_SECURITY_ENABLED' : True,
+        'GEOGIG_ENABLED' : True,
+        'WMST_ENABLED' : False,
+        'DATASTORE': '<%= @imports_db_alias %>',
+        'GEOGIG_DATASTORE_DIR':'/var/lib/geoserver_data/geogig',
+    }
+}
+#  Database datastore connection settings
+GEOGIG_DATASTORE_NAME = 'geogig-repo'
+
+UPLOADER = {
+    'BACKEND' : 'geonode.importer',
+    'OPTIONS' : {
+        'TIME_ENABLED' : True,
+        'GEOGIG_ENABLED' : True,
+    }
+}
+
+MEDIA_ROOT = '/var/lib/geonode/uwsgi/uploaded'
+STATIC_ROOT = '/var/lib/geonode/uwsgi/static/'
+
+# CSW settings
+CATALOGUE = {
+    'default': {
+        'ENGINE': 'geonode.catalogue.backends.pycsw_local',
+        'URL': '%scatalogue/csw' % SITEURL,
+    }
+}
+
+BROKER_URL = 'amqp://guest@127.0.0.1:5672'
+CELERY_ALWAYS_EAGER = False
+NOTIFICATION_QUEUE_ALL = not CELERY_ALWAYS_EAGER
+NOTIFICATION_LOCK_LOCATION = '/var/lib/geonode/uwsgi'
+CELERY_RESULT_BACKEND = "amqp"
+CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+#CELERYBEAT_SCHEDULE = {
+#    "geonode_update_layer": {
+#        "task": "geonode.tasks.update.geoserver_update_layers",
+#        "schedule": timedelta(seconds=60),
+#        "args": ()
+#    },
+#    "update_thumbnail": {
+#        "task": "geonode.tasks.update.create_document_thumbnail",
+#        "schedule": timedelta(seconds=60),
+#        "args": ()
+#    },
+#    "delete_layers": {
+#       "task": "geonode.tasks.deletion.delete_layer",
+#       "schedule": timedelta(seconds=60),
+#        "args": ()
+#    },
+#}
+
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
+        'URL': 'http://127.0.0.1:9200/',
+        'INDEX_NAME': 'geonode',
+        },
+}
+
+<% if !@auth_exempt_urls.empty? %>
+AUTH_EXEMPT_URLS += (<%= @auth_exempt_urls.join(', ') %>,)
+<% end %>
+
+INSTALLED_APPS += (
+    'haystack',
+    'notification',
+)
+
+SLACK_ENABLED = False
+SLACK_WEBHOOK_URLS = ['']
+
+# Enable CORS (https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS)
+CORS_ENABLED = False

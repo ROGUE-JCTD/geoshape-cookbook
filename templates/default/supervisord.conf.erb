@@ -1,0 +1,110 @@
+[unix_http_server]
+file=/var/run/supervisor.sock
+
+[supervisord]
+pidfile=/var/run/supervisor.pid
+logfile=/var/log/supervisor.log
+logfile_backups=1
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock
+
+[group:geoshape]
+programs=uwsgi,celery-worker1,celery-worker2,celery-worker3,celery-worker4,celery-worker5
+priority=999
+
+[program:uwsgi]
+command =  /var/lib/geonode/bin/uwsgi
+           --http 0.0.0.0:8000
+           --wsgi-file /var/lib/geonode/rogue_geonode/geoshape/wsgi.py
+           --processes 4
+           -t 120
+           --disable-logging -M
+           --need-app
+           -b 32768
+           --pp /var/lib/geonode/rogue_geonode
+           --uid geoshape
+           --max-request 5000
+           --static-map /robots.txt=/var/lib/geonode/rogue_geonode/geoshape/templates/robots.txt
+           --static-map /file-service=/var/lib/geoserver_data/file-service-store
+user=geoshape
+stdout_logfile=/var/log/geoshape/stdout.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=5
+stderr_logfile=/var/log/geoshape/stderr.log
+stderr_logfile_maxbytes=50MB
+stderr_logfile_backups=5
+stopsignal=INT
+
+[program:celery-worker1]
+command =   /var/lib/geonode/bin/celery worker
+            --app=geoshape.celery_app
+            --uid geoshape
+            --loglevel=info
+            -B
+            --workdir=/var/lib/geonode/rogue_geonode
+stdout_logfile=/var/log/celery/celery-w1-stdout.log
+stderr_logfile=/var/log/celery/celery-w1-stderr.log
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600
+
+[program:celery-worker2]
+command =   /var/lib/geonode/bin/celery worker
+            --app=geoshape.celery_app
+            --uid geoshape
+            -B
+            --loglevel=info
+            --workdir=/var/lib/geonode/rogue_geonode
+stdout_logfile=/var/log/celery/celery-w2-stdout.log
+stderr_logfile=/var/log/celery/celery-w2-stderr.log
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600
+
+[program:celery-worker3]
+command =   /var/lib/geonode/bin/celery worker
+            --app=geoshape.celery_app
+            --uid geoshape
+            --loglevel=info
+            -B
+            --workdir=/var/lib/geonode/rogue_geonode
+stdout_logfile=/var/log/celery/celery-w3-stdout.log
+stderr_logfile=/var/log/celery/celery-w3-stderr.log
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600
+
+[program:celery-worker4]
+command =   /var/lib/geonode/bin/celery worker
+            --app=geoshape.celery_app
+            --uid geoshape
+            --loglevel=info
+            -B
+            --workdir=/var/lib/geonode/rogue_geonode
+stdout_logfile=/var/log/celery/celery-w4-stdout.log
+stderr_logfile=/var/log/celery/celery-w4-stderr.log
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600
+
+[program:celery-worker5]
+command =   /var/lib/geonode/bin/celery worker
+            --app=geoshape.celery_app
+            --uid geoshape
+            -B
+            --loglevel=info
+            --workdir=/var/lib/geonode/rogue_geonode
+stdout_logfile=/var/log/celery/celery-w5-stdout.log
+stderr_logfile=/var/log/celery/celery-w5-stderr.log
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600

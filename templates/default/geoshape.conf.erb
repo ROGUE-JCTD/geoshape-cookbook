@@ -1,0 +1,66 @@
+<VirtualHost *:80>
+
+<% if @params[:https_enabled] && @params[:https_only] %>
+  RewriteEngine On
+  RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}$1 [R=301,L]
+<% else %>
+  Header set Access-Control-Allow-Origin "*"
+  Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+  Header always set Access-Control-Max-Age "1000"
+  Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+  SetEnv force-proxy-request-1.0 1
+  SetEnv proxy-nokeepalive 1
+  XSendFile on
+  LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+  CustomLog <%= @params[:log_dir] %>/apache-access.log proxy
+  ErrorLog <%= @params[:log_dir] %>/apache-error.log
+
+  <Directory "/var/lib/geoserver_data/file-service-store">
+    XSendFilePath /var/lib/geoserver_data/file-service-store
+  <% if @params[:version] == "2.2" %>
+    Order allow,deny
+    Allow from all
+  <% elsif @params[:version] == "2.4" %>
+    Require all granted
+  <% end %>
+  </Directory>
+ </VirtualHost>
+<% end %>
+
+<% if @params[:https_enabled] %>
+<VirtualHost *:443>
+  Header set Access-Control-Allow-Origin "*"
+  Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+  Header always set Access-Control-Max-Age "1000"
+  Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+  SetEnv force-proxy-request-1.0 1
+  SetEnv proxy-nokeepalive 1
+  XSendFile on
+  LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+  CustomLog <%= @params[:log_dir] %>/apache-ssl-access.log proxy
+  ErrorLog <%= @params[:log_dir] %>/apache-ssl-error.log
+
+  <Directory "/var/lib/geoserver_data/file-service-store">
+    XSendFilePath /var/lib/geoserver_data/file-service-store
+  <% if @params[:version] == "2.2" %>
+    Order allow,deny
+    Allow from all
+  <% elsif @params[:version] == "2.4" %>
+    Require all granted
+  <% end %>
+  </Directory>
+
+    SSLEngine On
+<% if @params[:cert] %>
+    SSLCertificateFile <%= @params[:cert] %>
+<% end %>
+<% if @params[:cert_key] %>
+    SSLCertificateKeyFile <%= @params[:cert_key] %>
+<% end %>
+<% if @params[:cert_chain] %>
+    SSLCertificateChainFile <%= @params[:cert_chain] %>
+<% end %>
+    SSLProxyEngine on
+</VirtualHost>
+<% end %>

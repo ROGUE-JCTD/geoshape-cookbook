@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Context>
+    <% @connections.each { |conn| %>
+    <Resource
+     name="jdbc/<%= conn['datasource_name'] %>" auth="Container" type="javax.sql.DataSource"
+     driverClassName="<%= conn['driver'] %>"
+     url="jdbc:<%= conn['connection_string'] %>"
+     username="<%= conn['user'] %>" password="<%= conn['password'] %>"
+     maxActive="<%= conn['max_active'] %>" maxIdle="<%= conn['max_idle'] %>" maxWait="<%= conn['max_wait'] %>"/>
+    <% } %>
+</Context>

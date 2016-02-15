@@ -1,0 +1,15 @@
+ProxyRequests Off
+
+<Proxy *>
+<% if @version == "2.2" %>
+  Order allow,deny
+  Allow from all
+<% elsif @version == "2.4" %>
+  Require all granted
+<% end %>
+</Proxy>
+
+ProxyPass /geoserver ajp://localhost:8009/geoserver
+ProxyPassReverse /geoserver ajp://localhost:8009/geoserver
+ProxyPass / http://localhost:8000/
+ProxyPassReverse / http://localhost:8000/
