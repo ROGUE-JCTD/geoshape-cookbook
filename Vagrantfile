@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+public_address = "192.168.99.101"
+
 Vagrant.configure('2') do |config|
   config.vm.define "geoshape" do |gs|    
     gs.omnibus.chef_version = '12.7.2'
@@ -12,7 +14,7 @@ Vagrant.configure('2') do |config|
       v.cpus = 2
     end
 
-    gs.vm.network :private_network, ip: "192.168.99.101"
+    gs.vm.network :private_network, ip: public_address
     gs.berkshelf.berksfile_path = 'Berksfile'
     gs.berkshelf.enabled = true
 
@@ -22,6 +24,12 @@ Vagrant.configure('2') do |config|
       chef.run_list = [
         'recipe[geoshape]'
       ]
+
+      chef.json = {
+        "geoshape" => {
+          "endpoint" => public_address
+        }
+      }
     end
   end
 end

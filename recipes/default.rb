@@ -6,6 +6,7 @@
 #
 # All rights reserved - Do Not Redistribute
 #
+
 require "net/http"
 require "uri"
 
@@ -39,6 +40,8 @@ geonode_password_hash =
 
 case node.platform
 when "centos", "redhat"
+  include_recipe "geoshape::repos"
+
   case node.platform_version.to_i
   when 7
     # Currently removing firewalld for backwards compatibility
@@ -47,6 +50,11 @@ when "centos", "redhat"
     end
 
     package "iptables-services"
+
+    # Making sure yum doesn’t try to upgrade SWIG on us. We need SWIG 1.3.x for Geoserver
+    execute "echo 'exclude=swig-2*' >> /etc/yum.conf" do
+      not_if "grep ^exclude=swig-2 /etc/yum.conf"
+    end
   end
 
     %w{80 443}.each { |port|
@@ -69,14 +77,6 @@ when "centos", "redhat"
 
     service "postgresql-#{node.postgresql.version}" do
       action :nothing
-    end
-
-    remote_file "/etc/yum.repos.d/geoshape.repo" do
-      source "http://yum.boundlessps.com/geoshape.repo"
-    end
-
-    execute "rpm --import http://yum.boundlessps.com/RPM-GPG-KEY-yum.boundlessps.com" do
-      not_if "rpm -q gpg-pubkey | grep gpg-pubkey-3b7df5eb-569d1240"
     end
 
     # We're currently installing everything on one instance/VM

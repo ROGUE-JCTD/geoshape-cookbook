@@ -78,9 +78,9 @@ end
 
 # Postgres JNDI attributes
 jndi_connections = [
-	{
+  {
     "datasource_name" => "#{node.geoshape.imports_database.geonode_alias}", "driver" =>  "org.postgresql.Driver", "user" => node.geoshape.imports_database.user, "password" => database_password, "max_total" => 40, "max_idle" => 10, "max_wait" => -1,
-	  "connection_string" => "postgresql://#{node.geoshape.imports_database.endpoint}:#{node.geoshape.imports_database.port}/#{node.geoshape.imports_database.name}"
+    "connection_string" => "postgresql://#{node.geoshape.imports_database.endpoint}:#{node.geoshape.imports_database.port}/#{node.geoshape.imports_database.name}"
   }
 ]
 

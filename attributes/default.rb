@@ -23,12 +23,12 @@ node.normal.java.jdk_version = 8
 
 case node.platform
 when "centos", "redhat"
-	default.tomcat_max_heap = "#{(node.memory.total.to_i * 0.4 ).floor / 1024}m"
-	default.elasctic_max_heap = "#{(node.memory.total.to_i * 0.1 ).floor / 1024}m"
-	node.normal.java.java_home = "/usr/lib/jvm/java"
-	node.normal.java.install_flavor = "oracle"
-	node.normal['java']['jdk']['8']['x86_64']['url'] = "https://s3.amazonaws.com/boundlessps-public/jdk-8u74-linux-x64.tar.gz"
-	node.normal['java']['jdk']['8']['x86_64']['checksum'] = "0bfd5d79f776d448efc64cb47075a52618ef76aabb31fde21c5c1018683cdddd"
+  default.tomcat_max_heap = "#{(node.memory.total.to_i * 0.4 ).floor / 1024}m"
+  default.elasctic_max_heap = "#{(node.memory.total.to_i * 0.1 ).floor / 1024}m"
+  node.normal.java.java_home = "/usr/lib/jvm/java"
+  node.normal.java.install_flavor = "oracle"
+  node.normal['java']['jdk']['8']['x86_64']['url'] = "https://s3.amazonaws.com/boundlessps-public/jdk-8u74-linux-x64.tar.gz"
+  node.normal['java']['jdk']['8']['x86_64']['checksum'] = "0bfd5d79f776d448efc64cb47075a52618ef76aabb31fde21c5c1018683cdddd"
 end
 
 node.normal.tomcat.java_options = "-Djava.awt.headless=true -Xms256m -Xmx#{node.tomcat_max_heap} -Xrs -XX:PerfDataSamplingInterval=500 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:SoftRefLRUPolicyMSPerMB=36000 -Dorg.geotools.shapefile.datetime=true -Djava.library.path=/opt/libjpeg-turbo/lib64:/usr/lib64  -Duser.home=/var/lib/geoserver_data/geogig"
@@ -45,7 +45,8 @@ default.java_keystore = "/etc/pki/java/cacerts"
 default.geoshape.basedir = "/var/lib/geonode"
 default.geoshape.bindir = "#{node.geoshape.basedir}/bin"
 default.python27 = "#{node.geoshape.bindir}/python2.7"
-default.geoshape.manage = "#{node.geoshape.basedir}/rogue_geonode/manage.py"
+default.geoshape.rogue_geonode = "#{node.geoshape.basedir}/rogue_geonode"
+default.geoshape.manage = "#{node.geoshape.rogue_geonode}/manage.py"
 default.geoshape.rabbitmq.endpoint = "localhost"
 default.geoshape.allowed_hosts = ["#{node.geoshape.endpoint}"]
 default.geoshape.geoserver.data_dir = "/var/lib/geoserver_data"
@@ -78,7 +79,7 @@ default.geoshape.database_master_password = "ui2lGJ30g5"
 default.geoshape.database_master_user = "postgres"
 
 # Default chef vault structure for all credentials
-default.geoshape.cert_vault = {:name => 'certs', :item => 'star_boundlessps'}
+default.geoshape.cert_vault = {:name => 'certs', :item => 'geoshape'}
 default.geoshape.database.vault = {:name => 'geoshape', :item => 'database'}
 default.geoshape.geoserver.vault = {:name => 'geoshape', :item => 'geoserver'}
 default.geoshape.geonode.vault = {:name => 'geoshape', :item => 'geonode'}
