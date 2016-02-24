@@ -1,5 +1,4 @@
 <VirtualHost *:80>
-
 <% if @params[:https_enabled] && @params[:https_only] %>
   RewriteEngine On
   RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
@@ -25,9 +24,9 @@
     Require all granted
   <% end %>
   </Directory>
- </VirtualHost>
 <% end %>
-
+ </VirtualHost>
+ 
 <% if @params[:https_enabled] %>
 <VirtualHost *:443>
   Header set Access-Control-Allow-Origin "*"

@@ -4,7 +4,7 @@ maintainer_email 'arahav@boundlessgeo.com'
 license          'All rights reserved'
 description      'Installs/Configures geoshape'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '0.1.1'
+version          '0.1.2'
 
 depends 'postgresql', '3.4.24'
 depends 'chef-vault'

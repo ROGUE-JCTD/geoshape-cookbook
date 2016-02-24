@@ -12,6 +12,9 @@ require "uri"
 
 include_recipe 'chef-vault'
 geoserver_vault = get_secret(node.geoshape.geoserver.vault[:name], node.geoshape.geoserver.vault[:item])
+database_vault = get_secret(node.geoshape.database.vault[:name], node.geoshape.database.vault[:item])
+
+database_password = database_vault ? database_vault['imports_password'] : node.geoshape.imports_database.password
 
 if geoserver_vault
   admin_password_hash = geoserver_vault['admin_password_hash']
@@ -25,29 +28,43 @@ else
   root_password_hash = node.geoserver.root_user.password_hash
 end
 
-database_vault = get_secret(node.geoshape.database.vault[:name], node.geoshape.database.vault[:item])
-database_password = 
-  if database_vault
-    database_vault['imports_password']
-  else
-    node.geoshape.imports_database.password
-  end
+service "tomcat8" do
+  action :nothing
+end
+
+include_recipe "geoshape::repos"
+package "geoshape-geoserver" do
+  notifies :run, "execute[set geoserver permissions]"
+end
+include_recipe "java"
+include_recipe "tomcat"
+
+execute "set geoserver permissions" do
+  command "find #{node.geoshape.geoserver.data_dir} -type d -exec chmod 755 {} + && find #{node.geoshape.geoserver.data_dir} -type f -exec chmod 644 {} + && chown -R tomcat:tomcat #{node.geoshape.geoserver.data_dir}"
+  action :nothing
+end
+
+if !%w{127.0.0.1 localhost}.include?(node.geoshape.geoserver.endpoint)
+  [node.tomcat.ajp_port, node.tomcat.port, node.tomcat.ssl_port].each { |port|
+    open_firewall_port(port)
+  }
+end
 
 # configuring various Geoserver passwords
 template "#{node.geoshape.geoserver.data_dir}/security/usergroup/default/users.xml" do
   source "gs_users.xml.erb"
   mode 0644
   owner "tomcat"
-  group "geoservice"
+  group "tomcat"
   notifies :restart, "service[tomcat8]"
-  # notifies :run, "ruby_block[wait-for-geoserver]"
+  # notifies :run, "ruby_block[wait for geoserver]"
   variables(password_hash: admin_password_hash)
 end
 
 file "#{node.geoshape.geoserver.data_dir}/security/masterpw.digest" do
   content root_password_digest
   owner "tomcat"
-  group "geoservice"
+  group "tomcat"
   notifies :restart, "service[tomcat8]"
   mode 0644
 end
@@ -55,7 +72,7 @@ end
 file "#{node.geoshape.geoserver.data_dir}/security/masterpw/default/passwd" do
   content root_password_hash
   owner "tomcat"
-  group "geoservice"
+  group "tomcat"
   notifies :restart, "service[tomcat8]"
   mode 0644
 end
@@ -63,9 +80,28 @@ end
 cookbook_file "#{node.geoshape.geoserver.data_dir}/security/geoserver.jceks" do
   source "geoserver.jceks"
   owner "tomcat"
-  group "geoservice"
+  group "tomcat"
   notifies :restart, "service[tomcat8]"
   mode 0644
+end
+
+# If Geoserver is on the same instance as Geoshape we always want to use HTTP
+geoshape_endpoint =
+  if %w{127.0.0.1 localhost}.include?(node.geoshape.geoserver.endpoint)
+    "http://localhost"
+  else 
+    node.geoshape.https_enabled ? "https://#{node.geoshape.endpoint}" : "http://#{node.geoshape.endpoint}"
+  end
+
+# Do we really want to restart Tomcat immediately? This is only relevant when Geoserver and Geoshape are installed on the same instance
+template "#{node.geoshape.geoserver.data_dir}/security/auth/geonodeAuthProvider/config.xml" do
+  source "geonode_auth_provider_config.xml.erb"
+  mode 0644
+  owner "tomcat"
+  group "tomcat"
+  notifies :restart, "service[tomcat8]", :immediately
+  notifies :run, "ruby_block[wait for geoserver]", :immediately
+  variables(url: geoshape_endpoint)
 end
 
 remote_file "#{node.tomcat.lib_dir}/postgresql.jar" do
@@ -85,18 +121,10 @@ jndi_connections = [
 ]
 
 node.normal.tomcat.jndi_connections = jndi_connections
-# template "#{node.tomcat.config_dir}/context.xml" do
-  # owner "root"
-  # group "root"
-  # mode 0644
-  # source "context.xml.erb"
-  # notifies :restart, "service[tomcat8]"
-  # variables(connections: jndi_connections)
-# end
 
 template "#{node.tomcat.webapp_dir}/geoserver/WEB-INF/web.xml" do
   owner "tomcat"
-  group "geoservice"
+  group "tomcat"
   mode 0644
   source "web.xml.erb"
   notifies :restart, "service[tomcat8]"
@@ -108,13 +136,13 @@ template "#{node.tomcat.webapp_dir}/geoserver/WEB-INF/web.xml" do
   )
 end
 
-ruby_block "wait-for-geoserver" do
+ruby_block "wait for geoserver" do
   block do
     attempts = 0
-    uri = URI.parse("http://localhost/geoserver/rest/workspaces/geonode.xml")
+    uri = URI.parse("http://localhost:#{node.tomcat.port}/geoserver/rest/workspaces/geonode.xml")
     http = Net::HTTP.new(uri.host, uri.port)
     req = Net::HTTP::Get.new(uri.request_uri)
-    req.basic_auth(node.geoshape.geoserver.admin_user, geoserver_password)
+    req.basic_auth(node.geoshape.geoserver.admin_user, admin_password)
 
     loop do
       resp = http.request(req)
@@ -131,23 +159,24 @@ template "#{Chef::Config[:file_cache_path]}/datastore.xml" do
   variables(name: node.geoshape.imports_database.geonode_alias)
 end
 
-# Create a Geoserver Postgres JNDI store
-ruby_block "create Geoserver store" do
-  block do
-    uri = URI.parse("http://localhost/geoserver/rest/workspaces/geonode/datastores.json")
-    http = Net::HTTP.new(uri.host, uri.port)
-    req = Net::HTTP::Get.new(uri.request_uri)
-    req.basic_auth(node.geoshape.geoserver.admin_user, admin_password)
-    resp = http.request(req)
+# unless datastore_exists?(node.geoshape.geoserver.admin_user, admin_password)
+  # Create a Geoserver Postgres JNDI store
+  ruby_block "create Geoserver store" do
+    block do
+      uri = URI.parse("http://localhost:#{node.tomcat.port}/geoserver/rest/workspaces/geonode/datastores.json")
+      http = Net::HTTP.new(uri.host, uri.port)
+      req = Net::HTTP::Get.new(uri.request_uri)
+      req.basic_auth(node.geoshape.geoserver.admin_user, admin_password)
+      resp = http.request(req)
 
-    if resp.code != '200'
-      `service httpd restart`
-      `service tomcat8 restart`
-      sleep 30
-    end
-    unless resp.body.include?(node.geoshape.imports_database.geonode_alias)
-      credentials = "#{node.geoshape.geoserver.admin_user}:'#{admin_password}'"
-      `curl -u #{credentials} -XPOST -H 'Content-type: text/xml' -d @#{Chef::Config[:file_cache_path]}/datastore.xml http://localhost/geoserver/rest/workspaces/geonode/datastores.xml`
+      if resp.code != '200'
+        `service tomcat8 restart`
+        sleep 30
+      end
+      unless resp.body.include?(node.geoshape.imports_database.geonode_alias)
+        credentials = "#{node.geoshape.geoserver.admin_user}:'#{admin_password}'"
+        `curl -u #{credentials} -XPOST -H 'Content-type: text/xml' -d @#{Chef::Config[:file_cache_path]}/datastore.xml http://localhost:#{node.tomcat.port}/geoserver/rest/workspaces/geonode/datastores.xml`
+      end
     end
   end
-end
+# end

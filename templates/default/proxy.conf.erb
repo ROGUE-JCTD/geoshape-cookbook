@@ -9,7 +9,7 @@ ProxyRequests Off
 <% end %>
 </Proxy>
 
-ProxyPass /geoserver ajp://localhost:8009/geoserver
-ProxyPassReverse /geoserver ajp://localhost:8009/geoserver
+ProxyPass /geoserver ajp://<%= @geoserver_endpoint%>:<%= @geoserver_port %>/geoserver
+ProxyPassReverse /geoserver ajp://<%= @geoserver_endpoint%>:<%= @geoserver_port %>/geoserver
 ProxyPass / http://localhost:8000/
 ProxyPassReverse / http://localhost:8000/

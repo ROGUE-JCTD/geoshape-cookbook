@@ -7,11 +7,7 @@
 # All rights reserved - Do Not Redistribute
 #
 
-case node.platform
-when "centos", "redhat"
-  include_recipe "yum-epel"
-end
-
+include_recipe "yum-epel"
 include_recipe "apache2"
 include_recipe "apache2::mod_rewrite"
 include_recipe "apache2::mod_ssl"
@@ -32,15 +28,17 @@ if node.geoshape.https_enabled
     mode 0755
   end
 
-  %w{cert key bundle}.each { |type|
-    file "#{node.apache.dir}/ssl/geoshape_#{type}" do
-      mode 0400
-      content cert[type].strip
-      sensitive true
-      owner node.apache.user
-      group node.apache.group
-    end
-  }
+  if cert
+    %w{cert key bundle}.each { |type|
+      file "#{node.apache.dir}/ssl/geoshape_#{type}" do
+        mode 0400
+        content cert[type].strip
+        sensitive true
+        owner node.apache.user
+        group node.apache.group
+      end
+    }
+  end
 end
 
 web_app "geoshape" do
@@ -64,5 +62,9 @@ template "#{node.apache.dir}/conf-enabled/proxy_ajp.conf" do
   owner node.apache.user
   group node.apache.group
   notifies :reload, "service[apache2]", :delayed
-  variables(version: node.apache.version)
+  variables(
+    version: node.apache.version,
+    geoserver_port: node.tomcat.ajp_port,
+    geoserver_endpoint: node.geoshape.geoserver.endpoint
+  )
 end

@@ -1,6 +1,5 @@
 case node.platform
 when "centos", "redhat"
-  node.normal.postgresql.password.postgres = node.geoshape.database_master_password
   node.normal.postgresql.enable_pgdg_yum = true
   node.normal.postgresql.version = "9.5"
   node.normal.postgresql.server.service_name = "postgresql-#{node.postgresql.version}"
