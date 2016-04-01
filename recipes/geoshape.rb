@@ -28,7 +28,7 @@ else
 end
 
 case node.platform
-when "centos", "redhat"
+when "centos", "redhat", "oracle"
   include_recipe "geoshape::repos"
   include_recipe "geoshape::iptables"
   include_recipe "geoshape::apache"
@@ -85,6 +85,7 @@ when "centos", "redhat"
       account_activation: node.geoshape.account_activation,
       account_approval: node.geoshape.account_approval,
       account_email_confirm: node.geoshape.account_email_confirm,
+      account_contact_email: node.geoshape.account_contact_email,
       auth_exempt_urls: node.geoshape.auth_exempt_urls,
       debug: node.geoshape.debug,
       lockdown_geonode: node.geoshape.lockdown_geonode,
@@ -158,6 +159,11 @@ when "centos", "redhat"
     minute "*"
     user "root"
     command "#{node.python27} #{node.geoshape.manage} updatelayers --remove-deleted --ignore-errors"
+  end
+
+  cookbook_file "/usr/bin/geoshape-config" do
+    source "geoshape-config"
+    mode 0755
   end
 else
   Chef::Log.warn("Unsupported platform #{node.platform}")

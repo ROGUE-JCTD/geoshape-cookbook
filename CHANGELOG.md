@@ -2,6 +2,10 @@ geoshape CHANGELOG
 ==================
 
 This file is used to list changes made in each version of the geoshape cookbook.
+0.1.3
+-----
+- Add initial Oracle Linux support
+
 0.1.2
 -----
 - Begin breaking dependencies into separate VMs/Instances

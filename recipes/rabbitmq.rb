@@ -11,7 +11,7 @@ require "net/http"
 require "uri"
 
 case node.platform
-when "centos", "redhat"
+when "centos", "redhat", "oracle"
   service "rabbitmq-server" do
     action :nothing
   end

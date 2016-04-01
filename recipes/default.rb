@@ -8,7 +8,7 @@
 #
 
 case node.platform
-when "centos", "redhat"
+when "centos", "redhat", "oracle"
   # We're currently installing everything on one instance/VM
   include_recipe "geoshape::database"
   include_recipe "geoshape::elasticsearch"

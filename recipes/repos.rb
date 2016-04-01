@@ -8,7 +8,7 @@
 #
 
 case node.platform
-when "redhat"
+when "redhat", "oracle"
   # RHEL is missing some base packages that we need, so adding the CentOS base repo
   cookbook_file "/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-#{node.platform_version.to_i}" do
     source "RPM-GPG-KEY-CentOS-#{node.platform_version.to_i}"
@@ -19,7 +19,7 @@ when "redhat"
     description "CentOS Base Repo"
     mirrorlist "http://mirrorlist.centos.org/?release=#{node.platform_version.to_i}&arch=$basearch&repo=os&infra=$infra"
     gpgkey "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-#{node.platform_version.to_i}"
-    exclude "centos-logos basesystem chrony subscription-manager yum linux-firmware abrt* redhat* python*"
+    includepkgs "minizip"
   end
 
   yum_repository "rabbitmq-server" do

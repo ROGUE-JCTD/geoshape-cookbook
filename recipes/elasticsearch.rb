@@ -10,7 +10,7 @@
 require "uri"
 
 case node.platform
-when "centos", "redhat"
+when "centos", "redhat", "oracle"
   include_recipe "geoshape::repos"
   include_recipe "geoshape::iptables"
 

@@ -11,7 +11,7 @@ include_recipe 'chef-vault'
 database_vault = get_secret(node.geoshape.database.vault[:name], node.geoshape.database.vault[:item])
 geoshape_database_password = database_vault ? database_vault['password'] : node.geoshape.database.password
 master_password = database_vault ? database_vault['master_password'] : node.geoshape.database_master_password
-node.normal.postgresql.password.postgres = master_password
+node.override.postgresql.password.postgres = master_password
 
 connection_param = "PGPASSWORD='#{master_password}' psql -U #{node.geoshape.database_master_user} -h #{node.geoshape.database.endpoint}"
 

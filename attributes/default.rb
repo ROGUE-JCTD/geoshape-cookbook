@@ -2,7 +2,7 @@
 default.geoshape.endpoint =
   if Chef::Config[:solo]
     case node.platform
-    when "centos", "redhat"
+    when "centos", "redhat", "oracle"
       case node.platform_version.to_i
       when 6
         node['network']['interfaces']['eth1']['addresses'].detect{|k,v| v[:family] == "inet" }.first
@@ -14,24 +14,24 @@ default.geoshape.endpoint =
     node.ipaddress
   end
 
-node.normal.tomcat.base_version = 8
-node.normal.tomcat.install_method = "archive"
-node.normal.tomcat.jndi = true
-node.normal.java.oracle.accept_oracle_download_terms = true
-node.normal.java.oracle.jce.enabled = true
-node.normal.java.jdk_version = 8
+default.tomcat.base_version = 8
+default.tomcat.install_method = "archive"
+default.tomcat.jndi = true
+default.java.oracle.accept_oracle_download_terms = true
+default.java.oracle.jce.enabled = true
+default.java.jdk_version = 8
 
 case node.platform
-when "centos", "redhat"
+when "centos", "redhat", "oracle"
   default.tomcat_max_heap = "#{(node.memory.total.to_i * 0.4 ).floor / 1024}m"
   default.elasctic_max_heap = "#{(node.memory.total.to_i * 0.1 ).floor / 1024}m"
-  node.normal.java.java_home = "/usr/lib/jvm/java"
-  node.normal.java.install_flavor = "oracle"
-  node.normal['java']['jdk']['8']['x86_64']['url'] = "https://s3.amazonaws.com/boundlessps-public/jdk-8u74-linux-x64.tar.gz"
-  node.normal['java']['jdk']['8']['x86_64']['checksum'] = "0bfd5d79f776d448efc64cb47075a52618ef76aabb31fde21c5c1018683cdddd"
+  default.java.java_home = "/usr/lib/jvm/java"
+  default.java.install_flavor = "oracle"
+  default['java']['jdk']['8']['x86_64']['url'] = "https://s3.amazonaws.com/boundlessps-public/jdk-8u74-linux-x64.tar.gz"
+  default['java']['jdk']['8']['x86_64']['checksum'] = "0bfd5d79f776d448efc64cb47075a52618ef76aabb31fde21c5c1018683cdddd"
 end
 
-node.normal.tomcat.java_options = "-Djava.awt.headless=true -Xms256m -Xmx#{node.tomcat_max_heap} -Xrs -XX:PerfDataSamplingInterval=500 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:SoftRefLRUPolicyMSPerMB=36000 -Dorg.geotools.shapefile.datetime=true -Djava.library.path=/opt/libjpeg-turbo/lib64:/usr/lib64  -Duser.home=/var/lib/geoserver_data/geogig"
+default.tomcat.java_options = "-Djava.awt.headless=true -Xms256m -Xmx#{node.tomcat_max_heap} -Xrs -XX:PerfDataSamplingInterval=500 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:SoftRefLRUPolicyMSPerMB=36000 -Dorg.geotools.shapefile.datetime=true -Djava.library.path=/opt/libjpeg-turbo/lib64:/usr/lib64  -Duser.home=/var/lib/geoserver_data/geogig"
 
 default.geoshape.https_only = false
 default.geoshape.https_enabled = false
@@ -64,6 +64,7 @@ default.geoshape.enable_registration = true
 default.geoshape.account_activation = 7
 default.geoshape.account_approval = true
 default.geoshape.account_email_confirm = true
+default.geoshape.account_contact_email = "admin@example.com"
 default.geoshape.auth_exempt_urls = ["'/account/signup/*'"]
 default.geoshape.debug = true
 default.geoshape.lockdown_geonode = true

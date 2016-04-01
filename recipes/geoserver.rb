@@ -120,7 +120,7 @@ jndi_connections = [
   }
 ]
 
-node.normal.tomcat.jndi_connections = jndi_connections
+node.override.tomcat.jndi_connections = jndi_connections
 
 template "#{node.tomcat.webapp_dir}/geoserver/WEB-INF/web.xml" do
   owner "tomcat"
